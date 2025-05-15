@@ -1,0 +1,71 @@
+/* Стили для body */
+body {
+    background-color: #0d1117;
+    color: #ffffff;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стили для карточки */
+.card {
+    background-color: #161b22;
+    border-radius: 1rem;
+    box-shadow: 0 0 20px rgba(0, 158, 117, 0.3);
+    padding: 2rem;
+    width: 25rem;
+}
+
+/* Стили для input элементов */
+.form-control {
+    background-color: #0d1117;
+    color: #ffffff;
+    border: 1px solid #30363d;
+}
+
+.form-control::placeholder {
+    color: #8b949e;
+}
+
+.form-control:focus {
+    background-color: #0d1117;
+    color: #ffffff;
+    border-color: #009e75;
+    box-shadow: none;
+}
+
+/* Стили для кнопки */
+.btn-success {
+    background-color: #009e75;
+    border: none;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.btn-success:hover {
+    background-color: #007e5e;
+}
+
+/* Стили для ссылок */
+a {
+    color: #009e75;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Стили для заголовков */
+h2 {
+    color: #c9d1d9;
+}
+
+/* Стили для ошибок */
+.alert-error {
+    color: #ff4d4d;
+    background-color: #2d1b1b;
+    border-color: #ff4d4d;
+    padding: 10px;
+    border-radius: 5px;
+}

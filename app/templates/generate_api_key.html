@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Профиль</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="{{ url_for('static', filename='css/generate_api_key.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<div class="header">
+  <div class="nav-links">
+    <a href="{{ url_for('auth.profile') }}">Главная</a>
+    <a href="{{ url_for('api.generate_api_key') }}">API</a>
+    <a href="{{ url_for('api.docs') }}">Документация</a>
+  </div>
+  <img src="{{ avatar }}" class="avatar" onclick="toggleUpload()" alt="avatar">
+</div>
+
+<!-- Форма загрузки аватара -->
+<div id="uploadForm" class="upload-form">
+  <form method="post" enctype="multipart/form-data">
+    <input type="file" name="avatar" class="form-control mb-2" required>
+    <button class="btn btn-primary w-100" type="submit" name="action" value="upload_avatar">Загрузить</button>
+  </form>
+</div>
+
+<!-- Форма генерации API ключа -->
+<div class="content">
+  <div class="api-key-container">
+    <h2 class="text-light mb-4">Генерация API ключа</h2>
+    <div class="api-key-box" id="api-key-box">
+      {{ api_key }}
+    </div>
+    <form method="post">
+      <button class="btn generate-btn w-75" type="submit" name="action" value="generate_key">Сгенерировать API ключ</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-section">
+    <p class="mb-1">&copy; 2025 UnitedChanger App</p>
+    <p class="mb-1">Все права защищены</p>
+  </div>
+
+  <div class="footer-section footer-center footer-links">
+    <a href="https://t.me/UnityKaczor" target="_blank">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M9.75 16.25L9.82 16.19 10.09 14.02 16.97 8.25C17.33 7.95 16.91 7.79 16.43 8.06L7.38 12.91 4.97 12.14C4.23 11.9 4.22 11.35 5.15 11L18.3 6.05C18.98 5.77 19.59 6.19 19.37 7.23L16.8 20.19C16.63 21.05 16.13 21.25 15.41 20.87L10.94 17.59 9.75 16.25Z"/></svg>
+      Telegram
+    </a>
+    <a href="mailto:unityduck1337@gmail.ru">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.89 20 2 19.1 2 18V6C2 4.9 2.89 4 4 4M4 8L12 13L20 8V6L12 11L4 6V8Z"/></svg>
+      Email
+    </a>
+    <a href="https://github.com/UnityDuck" target="_blank">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.58 2 12.25C2 16.88 5.13 20.79 9.26 21.95C9.82 22.05 10 21.72 10 21.43V19.52C6.73 20.17 6.14 18.02 6.14 18.02C5.63 16.68 4.84 16.33 4.84 16.33C3.75 15.61 4.92 15.63 4.92 15.63C6.11 15.72 6.73 16.88 6.73 16.88C7.79 18.67 9.5 18.16 10.18 17.87C10.3 17.1 10.63 16.6 10.99 16.31C8.4 16.01 5.7 15.07 5.7 10.77C5.7 9.55 6.11 8.58 6.8 7.83C6.68 7.54 6.32 6.43 6.9 4.98C6.9 4.98 7.81 4.67 10 6.2C10.9 5.96 11.85 5.84 12.8 5.84C13.75 5.84 14.7 5.96 15.6 6.2C17.8 4.67 18.7 4.98 18.7 4.98C19.28 6.43 18.92 7.54 18.8 7.83C19.5 8.58 19.9 9.55 19.9 10.77C19.9 15.08 17.19 15.99 14.6 16.29C15.06 16.66 15.47 17.43 15.47 18.61V21.43C15.47 21.73 15.65 22.06 16.21 21.95C20.34 20.79 23.47 16.88 23.47 12.25C23.47 6.58 18.99 2 13.47 2H12Z"/></svg>
+      GitHub
+    </a>
+  </div>
+
+  <div class="footer-section footer-right">
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">Выйти</a>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/generate_api_key.js') }}"></script>
+
+</body>
+</html>
