@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
 import sqlite3
-
 from flask import Blueprint, jsonify, request
 import requests
 
 from app.api.utils import verify_api_key
+from app.db.models import User
 
 api_services = Blueprint('api_services', __name__)
 
@@ -60,14 +60,9 @@ def get_historical_data():
     if not all([currency_pair, start_date, end_date, user_api_key]):
         return jsonify({'success': False, 'error': 'currency, start_date, end_date и api_key обязательны'}), 400
 
-    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../database/database.db')
-
-    with sqlite3.connect(db_path) as conn:
-        c = conn.cursor()
-        c.execute('SELECT id FROM users WHERE api_key = ?', (user_api_key,))
-        result = c.fetchone()
-        if not result:
-            return jsonify({'success': False, 'error': 'Неверный API ключ'}), 403
+    user = User.get_by_api_key(user_api_key)
+    if not user:
+        return jsonify({'success': False, 'error': 'Неверный API ключ'}), 403
 
     try:
         datetime.strptime(start_date, '%Y-%m-%d')
@@ -102,4 +97,3 @@ def get_historical_data():
 
     except requests.exceptions.RequestException as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-

@@ -17,9 +17,9 @@
         <a href="{{ url_for('api.docs') }}">Документация</a>
     </div>
     <img src="{{ avatar }}" class="avatar" onclick="toggleUpload()" alt="avatar">
-    <form method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
-      <input type="file" name="avatar" class="form-control mb-2" required>
-      <button type="submit" class="btn btn-primary btn-sm">Загрузить</button>
+    <form method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm" style="display: none;">
+        <input type="file" name="avatar" class="form-control mb-2" required accept="image/*" onchange="validateFileType()">
+        <button type="submit" class="btn btn-primary btn-sm">Загрузить</button>
     </form>
 </div>
 

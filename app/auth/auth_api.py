@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
-
 from app.auth.utils import generate_random_api_key
-from app.db.models import get_db
+from app.db.models import User
 
 auth_rest_api = Blueprint('auth_rest_api', __name__, url_prefix="/rest")
 
@@ -24,17 +22,16 @@ def api_register():
     if password1 != confirm_password:
         return jsonify({"success": False, "error": "Пароли не совпадают"}), 400
 
-    password_hash = generate_password_hash(password1)
+    password_hash = generate_password_hash(password1, method='pbkdf2:sha256')
     api_key = generate_random_api_key()
 
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        c.execute('INSERT INTO users (username, password, api_key) VALUES (?, ?, ?)', (username, password_hash, api_key))
-        conn.commit()
-        return jsonify({"success": True, "message": "Регистрация успешна", "api_key": api_key}), 201
-    except sqlite3.IntegrityError:
+    if User.get_by_username(username):
         return jsonify({"success": False, "error": "Пользователь уже существует"}), 409
+
+    new_user = User(username=username, password=password_hash, api_key=api_key)
+    new_user.save()
+
+    return jsonify({"success": True, "message": "Регистрация успешна", "api_key": api_key}), 201
 
 
 @auth_rest_api.route('/login', methods=['POST'])
@@ -46,13 +43,10 @@ def api_login():
     if not username or not password:
         return jsonify({"success": False, "error": "Имя пользователя и пароль обязательны"}), 400
 
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT id, password, api_key FROM users WHERE username = ?', (username,))
-    user = c.fetchone()
+    user = User.get_by_username(username)
 
-    if user and check_password_hash(user[1], password):
-        session['user_id'] = user[0]
-        return jsonify({"success": True, "message": "Вход выполнен успешно", "api_key": user[2]}), 200
+    if user and check_password_hash(user.password, password):
+        session['user_id'] = user.id
+        return jsonify({"success": True, "message": "Вход выполнен успешно", "api_key": user.api_key}), 200
     else:
         return jsonify({"success": False, "error": "Неверное имя пользователя или пароль"}), 401

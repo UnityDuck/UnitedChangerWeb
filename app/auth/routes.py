@@ -1,12 +1,10 @@
 import os
-import sqlite3
-
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 from app.auth.utils import generate_random_api_key
-from app.db.models import get_db
+from app.db.models import User
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -16,7 +14,7 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password1 = request.form['password']
-        password = generate_password_hash(password1)
+        password = generate_password_hash(password1, method='pbkdf2:sha256')
         confirm_password = request.form['confirm_password']
 
         if len(password) < 6:
@@ -27,17 +25,16 @@ def register():
             flash('Пароли не совпадают!', 'error')
             return render_template('register.html')
 
-        conn = get_db()
-        c = conn.cursor()
-        try:
-            api_key = generate_random_api_key()
-            c.execute('INSERT INTO users (username, password, api_key) VALUES (?, ?, ?)', (username, password, api_key))
-            conn.commit()
-            flash('Регистрация успешна! Пожалуйста, войдите в свой аккаунт.', 'success')
-            return redirect(url_for('auth.login'))
-        except sqlite3.IntegrityError:
+        if User.get_by_username(username):
             flash('Пользователь с таким именем уже существует!', 'error')
             return render_template('register.html')
+
+        api_key = generate_random_api_key()
+        new_user = User(username=username, password=password, api_key=api_key)
+        new_user.save()
+
+        flash('Регистрация успешна! Пожалуйста, войдите в свой аккаунт.', 'success')
+        return redirect(url_for('auth.login'))
 
     return render_template('register.html')
 
@@ -48,12 +45,10 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        conn = get_db()
-        c = conn.cursor()
-        c.execute('SELECT * FROM users WHERE username=?', (username,))
-        user = c.fetchone()
-        if user and check_password_hash(user[2], password):
-            session['user_id'] = user[0]
+
+        user = User.get_by_username(username)
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
             flash('Успешный вход!', 'success')
             return redirect(url_for('auth.profile'))
         else:
@@ -66,9 +61,13 @@ def login():
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+
     user_id = session['user_id']
 
-    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../database/database.db')
+    user = User.get_by_id(user_id)
+    if not user:
+        flash('Пользователь не найден.', 'error')
+        return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
         file = request.files['avatar']
@@ -80,18 +79,13 @@ def profile():
             filepath = os.path.join(upload_folder, filename)
             file.save(filepath)
             relative_filepath = os.path.join('uploads', filename)
-            with sqlite3.connect(db_path) as conn:
-                c = conn.cursor()
-                c.execute('UPDATE users SET avatar = ? WHERE id = ?', (relative_filepath, user_id))
-                conn.commit()
+            user.avatar = relative_filepath
+            user.save()
             flash('Аватар обновлён!')
             return redirect(url_for('auth.profile'))
-    with sqlite3.connect(db_path) as conn:
-        c = conn.cursor()
-        c.execute('SELECT avatar, api_key FROM users WHERE id = ?', (user_id,))
-        avatar_path, api_key = c.fetchone()
-    avatar_path = avatar_path or 'default.png'
-    return render_template('profile.html', avatar=f"static/{avatar_path}", api_key=api_key)
+
+    avatar_path = user.avatar or 'default.png'
+    return render_template('profile.html', avatar=f"static/{avatar_path}", api_key=user.api_key)
 
 
 @auth_bp.route('/logout')

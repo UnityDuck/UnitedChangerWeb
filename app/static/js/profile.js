@@ -3,6 +3,20 @@ function toggleUpload() {
     form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
 }
 
+function validateFileType() {
+    const fileInput = document.querySelector('input[name="avatar"]');
+    const file = fileInput.files[0];
+
+    if (file) {
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        if (!validImageTypes.includes(file.type)) {
+            alert("Пожалуйста, выберите изображение (форматы: JPG, PNG, GIF, WEBP).");
+            fileInput.value = '';
+        }
+    }
+}
+
 const apiKey = 'eGCvr06hXSw0oinclXKs';
 
 async function fetchAndRenderChart() {

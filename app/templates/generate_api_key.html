@@ -20,10 +20,9 @@
   <img src="{{ avatar }}" class="avatar" onclick="toggleUpload()" alt="avatar">
 </div>
 
-<!-- Форма загрузки аватара -->
-<div id="uploadForm" class="upload-form">
+<div id="uploadForm" class="upload-form" style="display: none;">
   <form method="post" enctype="multipart/form-data">
-    <input type="file" name="avatar" class="form-control mb-2" required>
+    <input type="file" name="avatar" class="form-control mb-2" required accept="image/*" onchange="validateFileType()">
     <button class="btn btn-primary w-100" type="submit" name="action" value="upload_avatar">Загрузить</button>
   </form>
 </div>

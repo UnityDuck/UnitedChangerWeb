@@ -1,17 +1,16 @@
 import os
 import sqlite3
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request, redirect, url_for, session, flash, render_template
 from werkzeug.utils import secure_filename
-
-from app.api.utils import verify_api_key
 import requests
-from flask import render_template, request, redirect, url_for, session, flash
 
 from app.auth.utils import generate_random_api_key
-from app.db.models import get_db
+from app.db.models import User
+from app.api.utils import verify_api_key
 
 api_bp = Blueprint('api', __name__)
+
 
 @api_bp.route('/exchange_rate', methods=['GET'])
 def exchange_rate():
@@ -48,8 +47,6 @@ def generate_api_key():
 
     user_id = session['user_id']
 
-    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../database/database.db')
-
     if request.method == 'POST':
         action = request.form.get('action')
         if action == "upload_avatar":
@@ -62,26 +59,29 @@ def generate_api_key():
                 filepath = os.path.join(upload_folder, filename)
                 file.save(filepath)
                 relative_filepath = os.path.join('uploads', filename)
-                with sqlite3.connect(db_path) as conn:
-                    c = conn.cursor()
-                    c.execute('UPDATE users SET avatar = ? WHERE id = ?', (relative_filepath, user_id))
-                    conn.commit()
+
+                user = User.get_by_id(user_id)
+                if user:
+                    user.avatar = relative_filepath
+                    user.save()
+
                 flash('Аватар обновлён!')
                 return redirect(url_for('api.generate_api_key'))
+
         elif action == "generate_key":
             new_key = generate_random_api_key()
-            with sqlite3.connect(db_path) as conn:
-                c = conn.cursor()
-                c.execute('UPDATE users SET api_key = ? WHERE id = ?', (new_key, user_id))
-                conn.commit()
+            user = User.get_by_id(user_id)
+            if user:
+                user.api_key = new_key
+                user.save()
             flash('API-ключ успешно сгенерирован!')
             return redirect(url_for('api.generate_api_key'))
-    with sqlite3.connect(db_path) as conn:
-        c = conn.cursor()
-        c.execute('SELECT avatar, api_key FROM users WHERE id = ?', (user_id,))
-        avatar_path, api_key = c.fetchone()
-    avatar_path = avatar_path or 'default.png'
-    return render_template('generate_api_key.html', avatar=f"../static/{avatar_path}", api_key=api_key)
+
+    user = User.get_by_id(user_id)
+    if user:
+        avatar_path = user.avatar or 'default.png'
+        return render_template('generate_api_key.html', avatar=f"../static/{avatar_path}", api_key=user.api_key)
+    return redirect(url_for('auth.login'))
 
 
 @api_bp.route('/docs', methods=['GET', 'POST'])
@@ -90,7 +90,6 @@ def docs():
         return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
-    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../database/database.db')
 
     if request.method == 'POST':
         file = request.files['avatar']
@@ -102,21 +101,24 @@ def docs():
             filepath = os.path.join(upload_folder, filename)
             file.save(filepath)
             relative_filepath = os.path.join('uploads', filename)
-            with sqlite3.connect(db_path) as conn:
-                c = conn.cursor()
-                c.execute('UPDATE users SET avatar = ? WHERE id = ?', (relative_filepath, user_id))
-                conn.commit()
+
+            user = User.get_by_id(user_id)
+            if user:
+                user.avatar = relative_filepath
+                user.save()
+
             flash('Аватар обновлён!')
             return redirect(url_for('api.docs'))
-    with sqlite3.connect(db_path) as conn:
-        c = conn.cursor()
-        c.execute('SELECT avatar, api_key FROM users WHERE id = ?', (user_id,))
-        avatar_path, api_key = c.fetchone()
-    avatar_path = avatar_path or 'default.png'
-    return render_template('docs.html', avatar=f"../static/{avatar_path}", api_key=api_key)
+
+    user = User.get_by_id(user_id)
+    if user:
+        avatar_path = user.avatar or 'default.png'
+        return render_template('docs.html', avatar=f"../static/{avatar_path}", api_key=user.api_key)
+    return redirect(url_for('auth.login'))
 
 
 api_generator = Blueprint("api_generator", __name__)
+
 
 @api_generator.route('/generate_api_key', methods=['POST'])
 def generate_api_key():
@@ -128,10 +130,10 @@ def generate_api_key():
     api_key = generate_random_api_key()
 
     try:
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('UPDATE users SET api_key = ? WHERE id = ?', (api_key, user_id))
-            conn.commit()
+        user = User.get_by_id(user_id)
+        if user:
+            user.api_key = api_key
+            user.save()
 
         return jsonify({"api_key": api_key}), 200
     except sqlite3.Error as e:
